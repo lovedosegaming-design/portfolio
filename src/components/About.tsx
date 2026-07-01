@@ -68,7 +68,7 @@ export default function About() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              {['Fast Turnaround', 'Unlimited Revisions', '4K Export'].map((item) => (
+              {['Fast Turnaround', '2-3 Revisions', '4K Export'].map((item) => (
                 <div key={item} className="flex items-center gap-2 text-sm text-secondary-text">
                   <div className="p-1 rounded-full bg-accent/20 text-accent-dark">
                     <Check size={12} />
