@@ -43,7 +43,7 @@ export default function About() {
           >
             <h2 className="text-4xl font-bold mb-4 text-primary-text">Meet the <span className="text-gradient">Editor</span></h2>
             <p className="text-secondary-text leading-relaxed text-lg">
-              Hi, I'm Alex. I'm a professional video editor with over 5 years of experience crafting compelling narratives for brands and creators.
+              Hi, I'm Anurag Singh. I'm a professional video editor with over 5 years of experience crafting compelling narratives for brands and creators.
               I specialize in high-retention editing styles that keep viewers hooked from the first second to the last.
             </p>
             
