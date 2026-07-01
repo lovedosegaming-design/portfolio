@@ -33,7 +33,6 @@ export default function Navbar() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300">
             <Video className="text-white w-5 h-5" />
           </div>
-          <span className={`text-xl font-bold tracking-tight ${scrolled ? 'text-white' : 'text-primary-text'}`}>Lumina</span>
         </Link>
 
         {/* Desktop Nav */}

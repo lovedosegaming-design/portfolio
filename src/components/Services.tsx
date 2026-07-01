@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Film, Scissors, Monitor, Zap, Music, PenTool } from 'lucide-react';
+import ThreeDTilt from './ThreeDTilt';
 
 const services = [
   {
@@ -58,16 +59,19 @@ export default function Services() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -10 }}
-              className="p-8 rounded-2xl bg-white/70 backdrop-blur-sm border border-light-border hover:border-accent hover:shadow-xl transition-all group"
+              className="h-full"
             >
-              <div className="mb-6 p-4 rounded-xl bg-primary/5 w-fit group-hover:bg-primary/10 transition-colors">
-                {service.icon}
-              </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors text-primary-text">{service.title}</h3>
-              <p className="text-secondary-text leading-relaxed">
-                {service.description}
-              </p>
+              <ThreeDTilt className="h-full">
+                <div className="h-full p-8 rounded-2xl bg-white/70 backdrop-blur-sm border border-light-border hover:border-accent hover:shadow-xl transition-all group">
+                  <div className="mb-6 p-4 rounded-xl bg-primary/5 w-fit group-hover:bg-primary/10 transition-colors">
+                    {service.icon}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors text-primary-text">{service.title}</h3>
+                  <p className="text-secondary-text leading-relaxed">
+                    {service.description}
+                  </p>
+                </div>
+              </ThreeDTilt>
             </motion.div>
           ))}
         </div>

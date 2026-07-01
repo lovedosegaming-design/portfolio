@@ -118,7 +118,7 @@ export default function Admin() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/20">
               <Video className="text-white w-4 h-4" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-primary-text">Lumina Admin</span>
+            <span className="text-lg font-bold tracking-tight text-primary-text">Admin</span>
           </Link>
         </div>
         

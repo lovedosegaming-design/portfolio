@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { TrendingUp, Users, Award } from 'lucide-react';
+import ThreeDTilt from './ThreeDTilt';
 
 export default function Hero() {
   return (
@@ -50,59 +51,65 @@ export default function Hero() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="absolute top-10 right-10 w-72 glass-card p-6"
+            className="absolute top-10 right-10 z-10"
           >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary">
-                <TrendingUp className="w-6 h-6" />
+            <ThreeDTilt max={15} scale={1.04} className="w-72 glass-card p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-secondary-text">Million views</p>
+                  <h3 className="text-2xl font-bold text-primary-text">15M+</h3>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-secondary-text">Million views</p>
-                <h3 className="text-2xl font-bold text-primary-text">15M+</h3>
+              <div className="h-2 bg-light-border rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "85%" }}
+                  transition={{ delay: 1, duration: 1.5 }}
+                  className="h-full bg-gradient-to-r from-primary to-accent"
+                />
               </div>
-            </div>
-            <div className="h-2 bg-light-border rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "85%" }}
-                transition={{ delay: 1, duration: 1.5 }}
-                className="h-full bg-gradient-to-r from-primary to-accent"
-              />
-            </div>
+            </ThreeDTilt>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, x: -30, y: 50 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="absolute top-1/2 left-0 w-64 glass-card p-6"
+            className="absolute top-1/2 left-0 z-10"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-accent/10 text-accent">
-                <Users className="w-6 h-6" />
+            <ThreeDTilt max={15} scale={1.04} className="w-64 glass-card p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-accent/10 text-accent">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-secondary-text">Subscribers</p>
+                  <h3 className="text-2xl font-bold text-primary-text">500K+</h3>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-secondary-text">Subscribers</p>
-                <h3 className="text-2xl font-bold text-primary-text">500K+</h3>
-              </div>
-            </div>
+            </ThreeDTilt>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
-            className="absolute bottom-20 right-20 w-64 glass-card p-6"
+            className="absolute bottom-20 right-20 z-10"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary-dark/10 text-primary-dark">
-                <Award className="w-6 h-6" />
+            <ThreeDTilt max={15} scale={1.04} className="w-64 glass-card p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary-dark/10 text-primary-dark">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-secondary-text">Project complete</p>
+                  <h3 className="text-2xl font-bold text-primary-text">320+</h3>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-secondary-text">Project complete</p>
-                <h3 className="text-2xl font-bold text-primary-text">320+</h3>
-              </div>
-            </div>
+            </ThreeDTilt>
           </motion.div>
           
           {/* Abstract decorative elements */}

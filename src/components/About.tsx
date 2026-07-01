@@ -1,11 +1,12 @@
 import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
+import ThreeDTilt from './ThreeDTilt';
 import editorPhoto from '../editor-photo.jpg';
 
 const skills = [
   { name: 'Premiere Pro', level: 95 },
-  { name: 'After Effects', level: 85 },
   { name: 'DaVinci Resolve', level: 90 },
+  { name: 'After Effects', level: 85 },
   { name: 'Photoshop', level: 80 },
   { name: 'Sound Design', level: 75 },
 ];
@@ -21,13 +22,15 @@ export default function About() {
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="aspect-square rounded-2xl overflow-hidden transition-all duration-500">
-              <img
-                src={editorPhoto}
-                alt="Meet the Editor"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <ThreeDTilt scale={1.05} max={15}>
+              <div className="aspect-square rounded-2xl overflow-hidden transition-all duration-500 shadow-2xl border border-light-border">
+                <img
+                  src={editorPhoto}
+                  alt="Meet the Editor"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </ThreeDTilt>
             <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-primary/20 rounded-full blur-[80px] -z-10" />
             <div className="absolute -top-6 -left-6 w-48 h-48 bg-accent/20 rounded-full blur-[80px] -z-10" />
           </motion.div>

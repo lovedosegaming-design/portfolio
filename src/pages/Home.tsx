@@ -8,10 +8,12 @@ import About from '../components/About';
 import Services from '../components/Services';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
+import ThreeDBackground from '../components/ThreeDBackground';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-main-bg text-primary-text selection:bg-primary/30">
+    <div className="min-h-screen bg-main-bg text-primary-text selection:bg-primary/30 relative">
+      <ThreeDBackground />
       <Navbar />
       <main>
         <Hero />

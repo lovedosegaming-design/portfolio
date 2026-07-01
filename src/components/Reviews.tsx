@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, Quote, Send, User, Plus } from 'lucide-react';
+import ThreeDTilt from './ThreeDTilt';
 
 const initialReviews = [
   {
@@ -179,41 +180,47 @@ export default function Reviews() {
                   zIndex: pos.zIndex,
                 }}
                 transition={{ duration: 0.4, type: "spring", stiffness: 100, damping: 20 }}
-                className="absolute w-[380px] p-8 rounded-2xl bg-card-bg border border-light-border backdrop-blur-sm"
+                className="absolute w-[380px] rounded-2xl cursor-pointer"
                 style={{ 
                   display: pos.display,
                   boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.1)'
                 }}
                 onClick={() => setActiveIndex(index)}
               >
-                <Quote className="absolute top-6 right-6 text-light-border w-10 h-10" />
-                
-                <div className="flex items-center gap-4 mb-6">
-                  <img
-                    src={review.avatar}
-                    alt={review.client}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                  />
-                  <div>
-                    <h4 className="font-bold text-primary-text">{review.client}</h4>
-                    <p className="text-xs text-secondary-text">{review.role}</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-1 mb-4 text-yellow-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      size={16} 
-                      fill={i < review.rating ? "currentColor" : "none"} 
-                      className={i < review.rating ? "text-yellow-500" : "text-gray-600"}
+                <ThreeDTilt
+                  max={index === activeIndex ? 12 : 0}
+                  scale={1}
+                  className="w-full h-full p-8 rounded-2xl bg-card-bg border border-light-border backdrop-blur-sm relative"
+                >
+                  <Quote className="absolute top-6 right-6 text-light-border w-10 h-10" />
+                  
+                  <div className="flex items-center gap-4 mb-6">
+                    <img
+                      src={review.avatar}
+                      alt={review.client}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                     />
-                  ))}
-                </div>
+                    <div>
+                      <h4 className="font-bold text-primary-text">{review.client}</h4>
+                      <p className="text-xs text-secondary-text">{review.role}</p>
+                    </div>
+                  </div>
 
-                <p className="text-secondary-text leading-relaxed italic">
-                  "{review.text}"
-                </p>
+                  <div className="flex gap-1 mb-4 text-yellow-500">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        size={16} 
+                        fill={i < review.rating ? "currentColor" : "none"} 
+                        className={i < review.rating ? "text-yellow-500" : "text-gray-600"}
+                      />
+                    ))}
+                  </div>
+
+                  <p className="text-secondary-text leading-relaxed italic">
+                    "{review.text}"
+                  </p>
+                </ThreeDTilt>
               </motion.div>
             );
           })}
