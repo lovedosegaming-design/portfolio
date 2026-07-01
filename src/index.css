@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Warm Cream & Rich Plum Color Palette */
+  --color-primary: #381932;
+  --color-primary-dark: #250F21;
+  --color-main-bg: #FFF3E6;
+  --color-soft-bg: #F6E5D3;
+  --color-dark-slate: #270F22;
+  --color-dark-card: #381932;
+  --color-accent: #D96B52;
+  --color-accent-dark: #B8533C;
+  --color-primary-text: #381932;
+  --color-secondary-text: #61445B;
+  --color-muted-text: #8C7186;
+  --color-white-text: #FFFFFF;
+  --color-light-border: #ECD9C3;
+  --color-card-bg: #FFFBF5; /* Cream off-white */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-main-bg text-primary-text antialiased font-sans;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg border border-light-border;
+  }
+  .glass-card {
+    @apply bg-card-bg backdrop-blur-md border border-light-border rounded-2xl shadow-lg hover:border-accent hover:shadow-xl transition-all duration-300;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+}
