@@ -4,7 +4,7 @@ import ThreeDTilt from './ThreeDTilt';
 import editorPhoto from '../editor-photo.jpg';
 
 const skills = [
-  { name: 'Premiere Pro', level: 95 },
+  { name: 'Premiere Pro', level: 100 },
   { name: 'Sound Design', level: 100 },
   { name: 'Colour Grading', level: 100 },
   { name: 'After Effects', level: 50 },
