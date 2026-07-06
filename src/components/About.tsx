@@ -5,10 +5,10 @@ import editorPhoto from '../editor-photo.jpg';
 
 const skills = [
   { name: 'Premiere Pro', level: 95 },
-  { name: 'DaVinci Resolve', level: 90 },
   { name: 'After Effects', level: 85 },
   { name: 'Photoshop', level: 80 },
   { name: 'Sound Design', level: 75 },
+  { name: 'Colour Grading', level: 100 },
 ];
 
 export default function About() {
