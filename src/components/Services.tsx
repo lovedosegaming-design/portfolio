@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Film, Scissors, Monitor, Zap, Music, PenTool } from 'lucide-react';
+import { Film, Scissors, Monitor, Zap, Music, Palette } from 'lucide-react';
 import ThreeDTilt from './ThreeDTilt';
 
 const services = [
@@ -29,9 +29,9 @@ const services = [
     description: 'Immersive audio mixing and sound effects to enhance the viewer experience.',
   },
   {
-    icon: <PenTool className="w-8 h-8 text-accent" />,
-    title: 'Motion Graphics',
-    description: 'Custom animations and visual effects to add polish and professionalism.',
+    icon: <Palette className="w-8 h-8 text-accent" />,
+    title: 'Colour Grading',
+    description: 'Professional color correction and grading to achieve a cinematic look and feel.',
   },
 ];
 
