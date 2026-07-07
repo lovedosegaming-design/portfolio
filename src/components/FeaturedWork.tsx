@@ -181,7 +181,7 @@ export default function FeaturedWork() {
       try {
         const res = await api.get('/projects');
         const shortVideos = res.data
-          .filter((p: any) => p.category === 'Short Video')
+          .filter((p: any) => p.category === 'Short Video' && p.likes !== 0)
           .sort((a: any, b: any) => (a.client_name || '').localeCompare(b.client_name || ''))
           .map((p: any) => ({
             id: p.id,

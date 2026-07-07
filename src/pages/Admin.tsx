@@ -12,6 +12,7 @@ interface Project {
   platform: string;
   video_url?: string;
   views: number;
+  likes?: number;
   category?: string;
 }
 
@@ -101,6 +102,7 @@ export default function Admin() {
         video_url: link,
         thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000&auto=format&fit=crop`,
         views: Math.floor(Math.random() * 500000) + 10000,
+        likes: 1,
         category: category
       };
 
@@ -124,6 +126,29 @@ export default function Admin() {
       } catch (error) {
         console.error('Failed to clear slot', error);
       }
+    }
+  };
+
+  const handleToggleVisibility = async (project: Project, category: string) => {
+    try {
+      const newVisibility = project.likes === 0 ? 1 : 0;
+      await api.delete(`/projects/${project.id}`);
+
+      const newEntry = {
+        title: project.title,
+        client_name: project.client_name,
+        platform: project.platform,
+        video_url: project.video_url,
+        thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000&auto=format&fit=crop`,
+        views: project.views,
+        likes: newVisibility,
+        category: category
+      };
+
+      await api.post('/projects', newEntry);
+      fetchProjects();
+    } catch (error) {
+      console.error('Failed to toggle visibility', error);
     }
   };
 
@@ -246,12 +271,12 @@ export default function Admin() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-primary-text">Short Videos (Featured Work)</h2>
-                <p className="text-xs text-secondary-text">Configure the 6 video slots visible on the main page.</p>
+                <p className="text-xs text-secondary-text">Configure the 10 video slots visible on the main page.</p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }, (_, i) => `Short Slot ${i + 1}`).map(slotId => (
+              {Array.from({ length: 10 }, (_, i) => `Short Slot ${i + 1}`).map(slotId => (
                 <div 
                   key={slotId}
                   className={`p-5 rounded-2xl border transition-all ${
@@ -267,7 +292,7 @@ export default function Admin() {
                         ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
                         : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
                     }`}>
-                      {getProjectForSlot(slotId, 'Short Video') ? 'Active' : 'Empty'}
+                      {getProjectForSlot(slotId, 'Short Video') ? (getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
                     </span>
                   </div>
 
@@ -304,6 +329,21 @@ export default function Admin() {
                           className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
                         >
                           Change Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Short Video');
+                            if (p) handleToggleVisibility(p, 'Short Video');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                            getProjectForSlot(slotId, 'Short Video')?.likes !== 0
+                              ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
+                              : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
+                          }`}
+                          title={getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
+                        >
+                          {getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
                         </button>
                         <button
                           type="button"
@@ -368,12 +408,12 @@ export default function Admin() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-primary-text">Long Videos (Shorts Showcase)</h2>
-                <p className="text-xs text-secondary-text">Configure the 5 video slots visible in the scroll showcase.</p>
+                <p className="text-xs text-secondary-text">Configure the 10 video slots visible in the scroll showcase.</p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 5 }, (_, i) => `Long Slot ${i + 1}`).map(slotId => (
+              {Array.from({ length: 10 }, (_, i) => `Long Slot ${i + 1}`).map(slotId => (
                 <div 
                   key={slotId}
                   className={`p-5 rounded-2xl border transition-all ${
@@ -389,7 +429,7 @@ export default function Admin() {
                         ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
                         : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
                     }`}>
-                      {getProjectForSlot(slotId, 'Long Video') ? 'Active' : 'Empty'}
+                      {getProjectForSlot(slotId, 'Long Video') ? (getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
                     </span>
                   </div>
 
@@ -426,6 +466,21 @@ export default function Admin() {
                           className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
                         >
                           Change Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Long Video');
+                            if (p) handleToggleVisibility(p, 'Long Video');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                            getProjectForSlot(slotId, 'Long Video')?.likes !== 0
+                              ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
+                              : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
+                          }`}
+                          title={getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
+                        >
+                          {getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
                         </button>
                         <button
                           type="button"
