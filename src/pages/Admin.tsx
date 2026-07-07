@@ -751,16 +751,24 @@ export default function Admin() {
                       className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg text-primary-text text-sm opacity-60 cursor-not-allowed"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary-text mb-1">Availability Status</label>
-                    <select
-                      value={availabilityStatus}
-                      onChange={(e) => handleUpdateAvailability(e.target.value)}
-                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                  <div className="flex items-center justify-between pt-2 border-t border-light-border/50">
+                    <div>
+                      <h4 className="text-xs font-semibold text-primary-text">Available for project</h4>
+                      <p className="text-[10px] text-secondary-text">Show status as available on the home page.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateAvailability(availabilityStatus === 'available' ? 'unavailable' : 'available')}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                        availabilityStatus === 'available' ? 'bg-primary' : 'bg-light-border'
+                      }`}
                     >
-                      <option value="available">Available for new projects</option>
-                      <option value="unavailable">Unavailable for new projects</option>
-                    </select>
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          availabilityStatus === 'available' ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>
