@@ -2,19 +2,31 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Send, MapPin } from 'lucide-react';
 
-const PRICING_DATA: Record<string, { long: string; short: string }> = {
-  '🎮 Gaming': { long: '$150 - $300', short: '$50 - $100' },
-  '🎥 Vlogs': { long: '$120 - $250', short: '$40 - $80' },
-  '📚 Educational': { long: '$180 - $350', short: '$60 - $120' },
-  '🍔 Food': { long: '$140 - $280', short: '$50 - $90' },
-  '🎙️ Podcast': { long: '$200 - $400', short: '$70 - $150' },
-  '✈️ Travel': { long: '$160 - $320', short: '$50 - $110' },
-  '📱 Social Media Content': { long: '$100 - $200', short: '$30 - $70' },
+const PRICING_DATA: Record<string, { long: number; short: number }> = {
+  '🎮 Gaming': { long: 200, short: 250 },
+  '🎥 Vlogs': { long: 150, short: 180 },
+  '📚 Educational': { long: 180, short: 220 },
+  '🍔 Food': { long: 160, short: 200 },
+  '🎙️ Podcast': { long: 120, short: 150 },
+  '✈️ Travel': { long: 170, short: 210 },
+  '📱 Social Media Content': { long: 130, short: 160 },
+};
+
+const EXCHANGE_RATE = 83; // 1 USD = 83 INR
+
+const formatPrice = (usdAmount: number, currency: 'USD' | 'INR') => {
+  if (currency === 'USD') {
+    return `$${usdAmount}/min`;
+  } else {
+    const inrAmount = Math.round(usdAmount * EXCHANGE_RATE);
+    return `₹${inrAmount.toLocaleString('en-IN')}/min`;
+  }
 };
 
 export default function Contact() {
   const [projectType, setProjectType] = useState('🎮 Gaming');
   const [videoFormat, setVideoFormat] = useState('Long Video');
+  const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
   return (
     <section id="contact" className="py-24 bg-soft-bg relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-soft-bg to-soft-bg -z-10" />
@@ -139,10 +151,28 @@ export default function Contact() {
               </AnimatePresence>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-text">Estimated Pricing</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium text-secondary-text">Estimated Pricing</label>
+                  <div className="flex bg-white/5 border border-white/10 rounded-lg p-0.5 text-[10px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setCurrency('USD')}
+                      className={`px-2.5 py-1 rounded transition-colors ${currency === 'USD' ? 'bg-primary text-white' : 'text-secondary-text hover:text-primary'}`}
+                    >
+                      USD ($)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrency('INR')}
+                      className={`px-2.5 py-1 rounded transition-colors ${currency === 'INR' ? 'bg-primary text-white' : 'text-secondary-text hover:text-primary'}`}
+                    >
+                      INR (₹)
+                    </button>
+                  </div>
+                </div>
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={`${projectType}-${videoFormat}`}
+                    key={`${projectType}-${videoFormat}-${currency}`}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -159,7 +189,7 @@ export default function Contact() {
                         </div>
                         <div className="text-right">
                           <span className="text-2xl font-extrabold text-gradient block">
-                            {PRICING_DATA[projectType] ? (videoFormat === 'Long Video' ? PRICING_DATA[projectType].long : PRICING_DATA[projectType].short) : 'Custom'}
+                            {PRICING_DATA[projectType] ? (videoFormat === 'Long Video' ? formatPrice(PRICING_DATA[projectType].long, currency) : formatPrice(PRICING_DATA[projectType].short, currency)) : 'Custom'}
                           </span>
                           <span className="text-[10px] text-muted-text block leading-none mt-1">*Starting price</span>
                         </div>
