@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Send, MapPin } from 'lucide-react';
 
+const PRICING_DATA: Record<string, { long: string; short: string }> = {
+  '🎮 Gaming': { long: '$150 - $300', short: '$50 - $100' },
+  '🎥 Vlogs': { long: '$120 - $250', short: '$40 - $80' },
+  '📚 Educational': { long: '$180 - $350', short: '$60 - $120' },
+  '🍔 Food': { long: '$140 - $280', short: '$50 - $90' },
+  '🎙️ Podcast': { long: '$200 - $400', short: '$70 - $150' },
+  '✈️ Travel': { long: '$160 - $320', short: '$50 - $110' },
+  '📱 Social Media Content': { long: '$100 - $200', short: '$30 - $70' },
+};
+
 export default function Contact() {
   const [projectType, setProjectType] = useState('🎮 Gaming');
   const [videoFormat, setVideoFormat] = useState('Long Video');
@@ -127,6 +137,45 @@ export default function Contact() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-secondary-text">Estimated Pricing</label>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${projectType}-${videoFormat}`}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-4 rounded-xl bg-white/5 border border-light-border flex items-center justify-between overflow-hidden"
+                  >
+                    {projectType !== 'Other' ? (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-secondary-text uppercase tracking-wider">Estimated Price</span>
+                          <span className="text-xs text-muted-text mt-1">
+                            For {projectType.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim()} ({videoFormat})
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-extrabold text-gradient block">
+                            {PRICING_DATA[projectType] ? (videoFormat === 'Long Video' ? PRICING_DATA[projectType].long : PRICING_DATA[projectType].short) : 'Custom'}
+                          </span>
+                          <span className="text-[10px] text-muted-text block leading-none mt-1">*Starting price</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full flex items-center gap-3 py-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-secondary-text uppercase tracking-wider">Custom Project</span>
+                          <span className="text-xs text-muted-text mt-0.5">Let's discuss and finalize a custom quote for your requirements.</span>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-secondary-text">Message</label>
