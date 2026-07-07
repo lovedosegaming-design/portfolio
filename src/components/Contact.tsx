@@ -14,19 +14,19 @@ const PRICING_DATA: Record<string, { long: number; short: number }> = {
 
 const EXCHANGE_RATE = 83; // 1 USD = 83 INR
 
-const formatPrice = (usdAmount: number, currency: 'USD' | 'INR') => {
-  if (currency === 'USD') {
-    return `$${usdAmount}/min`;
-  } else {
-    const inrAmount = Math.round(usdAmount * EXCHANGE_RATE);
+const formatPrice = (inrAmount: number, currency: 'USD' | 'INR') => {
+  if (currency === 'INR') {
     return `₹${inrAmount.toLocaleString('en-IN')}/min`;
+  } else {
+    const usdAmount = (inrAmount / EXCHANGE_RATE).toFixed(2);
+    return `$${usdAmount}/min`;
   }
 };
 
 export default function Contact() {
   const [projectType, setProjectType] = useState('🎮 Gaming');
   const [videoFormat, setVideoFormat] = useState('Long Video');
-  const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
+  const [currency, setCurrency] = useState<'USD' | 'INR'>('INR');
   return (
     <section id="contact" className="py-24 bg-soft-bg relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-soft-bg to-soft-bg -z-10" />
