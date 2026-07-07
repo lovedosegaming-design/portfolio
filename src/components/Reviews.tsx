@@ -145,7 +145,7 @@ export default function Reviews() {
   };
 
   return (
-    <section className="py-24 bg-soft-bg relative overflow-hidden">
+    <section id="testimonials" className="py-24 bg-soft-bg relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-soft-bg to-soft-bg -z-10" />
       
