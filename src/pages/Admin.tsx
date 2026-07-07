@@ -278,6 +278,99 @@ export default function Admin() {
         </header>
 
         <div className="space-y-12">
+          {/* Client Stories Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Settings size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-primary-text">Client Success Stories</h2>
+                <p className="text-xs text-secondary-text">Add and manage video success stories for creators and brands.</p>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6 items-start">
+              {/* Form */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
+                <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
+                <form onSubmit={handleSaveClientStory} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://..."
+                      value={clientStoryLink}
+                      onChange={(e) => setClientStoryLink(e.target.value)}
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                    />
+                  </div>
+                  {clientStoryError && <p className="text-xs text-red-400">{clientStoryError}</p>}
+                  <button
+                    type="submit"
+                    disabled={isAddingClientStory}
+                    className="w-full py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md shadow-primary/10"
+                  >
+                    {isAddingClientStory ? 'Adding...' : 'Add Client Story'}
+                  </button>
+                </form>
+              </div>
+
+              {/* List */}
+              <div className="lg:col-span-2 bg-card-bg border border-light-border rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-secondary-text">
+                  <thead className="bg-soft-bg text-secondary-text uppercase font-semibold text-xs">
+                    <tr>
+                      <th className="px-6 py-4">Client</th>
+                      <th className="px-6 py-4">Platform</th>
+                      <th className="px-6 py-4">Video URL</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-light-border text-xs">
+                    {projects.filter(p => p.category === 'Client Story').length > 0 ? (
+                      projects.filter(p => p.category === 'Client Story').map((project) => (
+                        <tr key={project.id} className="hover:bg-soft-bg transition-colors">
+                          <td className="px-6 py-4 font-bold text-primary-text">{project.client_name}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${
+                              project.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                              project.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
+                              'border-blue-500/20 text-blue-400 bg-blue-500/10'
+                            }`}>
+                              {project.platform}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 truncate max-w-[200px]" title={project.video_url}>
+                            <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                              <ExternalLink size={10} />
+                              {project.video_url}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button 
+                              onClick={() => handleDeleteProject(project.id)}
+                              className="p-1 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-muted-text">
+                          No client stories added yet. Use the form on the left to add one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           {/* Short Videos Section */}
           <div className="space-y-6">
             <div className="flex items-center gap-3 pb-2 border-b border-light-border">
@@ -531,99 +624,6 @@ export default function Admin() {
                   )}
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Client Stories Section */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Settings size={20} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-primary-text">Client Success Stories</h2>
-                <p className="text-xs text-secondary-text">Add and manage video success stories for creators and brands.</p>
-              </div>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-6 items-start">
-              {/* Form */}
-              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
-                <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
-                <form onSubmit={handleSaveClientStory} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
-                    <input
-                      type="url"
-                      required
-                      placeholder="https://..."
-                      value={clientStoryLink}
-                      onChange={(e) => setClientStoryLink(e.target.value)}
-                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-                    />
-                  </div>
-                  {clientStoryError && <p className="text-xs text-red-400">{clientStoryError}</p>}
-                  <button
-                    type="submit"
-                    disabled={isAddingClientStory}
-                    className="w-full py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md shadow-primary/10"
-                  >
-                    {isAddingClientStory ? 'Adding...' : 'Add Client Story'}
-                  </button>
-                </form>
-              </div>
-
-              {/* List */}
-              <div className="lg:col-span-2 bg-card-bg border border-light-border rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-secondary-text">
-                  <thead className="bg-soft-bg text-secondary-text uppercase font-semibold text-xs">
-                    <tr>
-                      <th className="px-6 py-4">Client</th>
-                      <th className="px-6 py-4">Platform</th>
-                      <th className="px-6 py-4">Video URL</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-light-border text-xs">
-                    {projects.filter(p => p.category === 'Client Story').length > 0 ? (
-                      projects.filter(p => p.category === 'Client Story').map((project) => (
-                        <tr key={project.id} className="hover:bg-soft-bg transition-colors">
-                          <td className="px-6 py-4 font-bold text-primary-text">{project.client_name}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${
-                              project.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
-                              project.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
-                              'border-blue-500/20 text-blue-400 bg-blue-500/10'
-                            }`}>
-                              {project.platform}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 truncate max-w-[200px]" title={project.video_url}>
-                            <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                              <ExternalLink size={10} />
-                              {project.video_url}
-                            </a>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => handleDeleteProject(project.id)}
-                              className="p-1 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-muted-text">
-                          No client stories added yet. Use the form on the left to add one.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
         </div>
