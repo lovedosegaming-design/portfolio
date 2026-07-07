@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Video, Settings, Trash2, LogOut, Plus, ExternalLink, Film, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Video, Settings, Trash2, LogOut, Plus, ExternalLink, Film, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -49,6 +49,25 @@ export default function Admin() {
 
   const getProjectForSlot = (slotId: string, category: string) => {
     return projects.find(p => p.category === category && p.client_name === slotId);
+  };
+
+  const getGroupedClientStories = () => {
+    const clientStories = projects.filter(p => p.category === 'Client Story');
+    const groups: Record<string, { clientName: string; platform: string; videos: Project[] }> = {};
+    
+    clientStories.forEach(project => {
+      const name = project.client_name || 'Creator';
+      if (!groups[name]) {
+        groups[name] = {
+          clientName: name,
+          platform: project.platform || 'YouTube',
+          videos: []
+        };
+      }
+      groups[name].videos.push(project);
+    });
+    
+    return Object.values(groups);
   };
 
   const handleSaveSlot = async (slotId: string, category: string) => {
@@ -158,42 +177,19 @@ export default function Admin() {
       setClientStoryError('Please provide a video link');
       return;
     }
+    if (!clientStoryName.trim()) {
+      setClientStoryError('Please provide a client name');
+      return;
+    }
 
     setIsAddingClientStory(true);
     setClientStoryError('');
 
     try {
-      let platform = 'YouTube';
-      let clientName = 'Creator';
-      const url = clientStoryLink.toLowerCase();
-
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        platform = 'YouTube';
-        clientName = 'YouTube Creator';
-      } else if (url.includes('instagram.com')) {
-        platform = 'Instagram';
-        clientName = 'Instagram Creator';
-      } else if (url.includes('tiktok.com')) {
-        platform = 'TikTok';
-        clientName = 'TikTok Creator';
-      } else if (url.includes('twitch.tv')) {
-        platform = 'Twitch';
-        clientName = 'Twitch Creator';
-      } else {
-        try {
-          const domain = new URL(clientStoryLink).hostname;
-          platform = domain.replace('www.', '').split('.')[0];
-          platform = platform.charAt(0).toUpperCase() + platform.slice(1);
-          clientName = `${platform} Creator`;
-        } catch (e) {
-          throw new Error('Invalid URL. Please provide a valid link.');
-        }
-      }
-
       const newEntry = {
-        title: `${clientName} Success Story`,
-        client_name: clientName,
-        platform,
+        title: `${clientStoryName.trim()} Success Story`,
+        client_name: clientStoryName.trim(),
+        platform: clientStoryPlatform,
         video_url: clientStoryLink,
         thumbnail_url: `https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop`,
         views: Math.floor(Math.random() * 500000) + 10000,
@@ -204,6 +200,7 @@ export default function Admin() {
       fetchProjects();
       
       setClientStoryLink('');
+      setClientStoryName('');
     } catch (err: any) {
       setClientStoryError(err.message);
     } finally {
@@ -242,6 +239,7 @@ export default function Admin() {
         <nav className="p-4 space-y-2">
           {[
             { id: 'projects', icon: Video, label: 'Projects' },
+            { id: 'stories', icon: Film, label: 'Client Stories' },
             { id: 'settings', icon: Settings, label: 'Settings' },
           ].map((item) => (
             <button
@@ -271,361 +269,499 @@ export default function Admin() {
       <main className="flex-1 md:ml-64 p-8">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-primary-text">Project Management</h1>
-            <p className="text-secondary-text text-sm">Manage your portfolio and client work.</p>
+            <h1 className="text-2xl font-bold text-primary-text">
+              {activeTab === 'projects' && 'Project Management'}
+              {activeTab === 'stories' && 'Client Success Stories'}
+              {activeTab === 'settings' && 'Settings'}
+            </h1>
+            <p className="text-secondary-text text-sm">
+              {activeTab === 'projects' && 'Manage your portfolio and client work.'}
+              {activeTab === 'stories' && 'Manage video success stories for creators and brands.'}
+              {activeTab === 'settings' && 'Manage account and website preferences.'}
+            </p>
           </div>
-
         </header>
 
         <div className="space-y-12">
-          {/* Client Stories Section */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Settings size={20} />
+          {/* Client Stories Tab */}
+          {activeTab === 'stories' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Film size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-primary-text">Client Success Stories</h2>
+                  <p className="text-xs text-secondary-text">Add and manage video success stories for creators and brands.</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-primary-text">Client Success Stories</h2>
-                <p className="text-xs text-secondary-text">Add and manage video success stories for creators and brands.</p>
+
+              <div className="grid lg:grid-cols-3 gap-6 items-start">
+                {/* Form */}
+                <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
+                  <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
+                  <form onSubmit={handleSaveClientStory} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary-text mb-1">Client Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Gaming Nexus"
+                        value={clientStoryName}
+                        onChange={(e) => setClientStoryName(e.target.value)}
+                        className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
+                      <input
+                        type="url"
+                        required
+                        placeholder="https://..."
+                        value={clientStoryLink}
+                        onChange={(e) => {
+                          const url = e.target.value;
+                          setClientStoryLink(url);
+                          const lowerUrl = url.toLowerCase();
+                          if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
+                            setClientStoryPlatform('YouTube');
+                          } else if (lowerUrl.includes('instagram.com')) {
+                            setClientStoryPlatform('Instagram');
+                          } else if (lowerUrl.includes('tiktok.com')) {
+                            setClientStoryPlatform('TikTok');
+                          } else if (lowerUrl.includes('twitch.tv')) {
+                            setClientStoryPlatform('Twitch');
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary-text mb-1">Platform</label>
+                      <select
+                        value={clientStoryPlatform}
+                        onChange={(e) => setClientStoryPlatform(e.target.value)}
+                        className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                      >
+                        <option value="YouTube">YouTube</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Twitch">Twitch</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    {clientStoryError && <p className="text-xs text-red-400">{clientStoryError}</p>}
+                    <button
+                      type="submit"
+                      disabled={isAddingClientStory}
+                      className="w-full py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md shadow-primary/10"
+                    >
+                      {isAddingClientStory ? 'Adding...' : 'Add Client Story'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* List grouped by Client */}
+                <div className="lg:col-span-2 space-y-6">
+                  {getGroupedClientStories().length > 0 ? (
+                    getGroupedClientStories().map((group) => (
+                      <div 
+                        key={group.clientName}
+                        className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm space-y-4"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
+                              <span className="font-bold text-primary text-lg">
+                                {group.clientName.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-primary-text text-base">{group.clientName}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                                  group.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                                  group.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
+                                  'border-blue-500/20 text-blue-400 bg-blue-500/10'
+                                }`}>
+                                  {group.platform}
+                                </span>
+                                <span className="text-xs text-secondary-text">
+                                  {group.videos.length} {group.videos.length === 1 ? 'video' : 'videos'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 pt-3 border-t border-light-border">
+                          <p className="text-xs font-semibold text-secondary-text uppercase tracking-wider">Edited Videos</p>
+                          <div className="divide-y divide-light-border">
+                            {group.videos.map((video) => (
+                              <div key={video.id} className="py-2.5 flex justify-between items-center gap-4 text-xs">
+                                <div className="flex-1 min-w-0">
+                                  <a 
+                                    href={video.video_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-primary hover:underline font-medium flex items-center gap-1.5"
+                                  >
+                                    <ExternalLink size={12} className="flex-shrink-0" />
+                                    <span className="truncate block" title={video.video_url}>{video.video_url}</span>
+                                  </a>
+                                  <div className="text-[10px] text-secondary-text mt-0.5">
+                                    Views: {video.views.toLocaleString()}
+                                  </div>
+                                </div>
+                                <button 
+                                  onClick={() => handleDeleteProject(video.id)}
+                                  className="p-1.5 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors text-secondary-text"
+                                  title="Delete this video"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-12 text-center text-secondary-text bg-card-bg border border-light-border rounded-2xl">
+                      <Film className="mx-auto text-muted-text mb-3" size={36} />
+                      <p className="text-sm font-medium">No success stories added yet.</p>
+                      <p className="text-xs text-muted-text mt-1">Use the form on the left to add one.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="grid lg:grid-cols-3 gap-6 items-start">
-              {/* Form */}
-              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
-                <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
-                <form onSubmit={handleSaveClientStory} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
-                    <input
-                      type="url"
-                      required
-                      placeholder="https://..."
-                      value={clientStoryLink}
-                      onChange={(e) => setClientStoryLink(e.target.value)}
-                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-                    />
+          {/* Projects Tab */}
+          {activeTab === 'projects' && (
+            <div className="space-y-12">
+              {/* Short Videos Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Film size={20} />
                   </div>
-                  {clientStoryError && <p className="text-xs text-red-400">{clientStoryError}</p>}
-                  <button
-                    type="submit"
-                    disabled={isAddingClientStory}
-                    className="w-full py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md shadow-primary/10"
-                  >
-                    {isAddingClientStory ? 'Adding...' : 'Add Client Story'}
-                  </button>
-                </form>
-              </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-primary-text">Short Videos (Featured Work)</h2>
+                    <p className="text-xs text-secondary-text">Configure the 10 video slots visible on the main page.</p>
+                  </div>
+                </div>
 
-              {/* List */}
-              <div className="lg:col-span-2 bg-card-bg border border-light-border rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-secondary-text">
-                  <thead className="bg-soft-bg text-secondary-text uppercase font-semibold text-xs">
-                    <tr>
-                      <th className="px-6 py-4">Client</th>
-                      <th className="px-6 py-4">Platform</th>
-                      <th className="px-6 py-4">Video URL</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-light-border text-xs">
-                    {projects.filter(p => p.category === 'Client Story').length > 0 ? (
-                      projects.filter(p => p.category === 'Client Story').map((project) => (
-                        <tr key={project.id} className="hover:bg-soft-bg transition-colors">
-                          <td className="px-6 py-4 font-bold text-primary-text">{project.client_name}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${
-                              project.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
-                              project.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
-                              'border-blue-500/20 text-blue-400 bg-blue-500/10'
-                            }`}>
-                              {project.platform}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 truncate max-w-[200px]" title={project.video_url}>
-                            <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                              <ExternalLink size={10} />
-                              {project.video_url}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 10 }, (_, i) => `Short Slot ${i + 1}`).map(slotId => (
+                    <div 
+                      key={slotId}
+                      className={`p-5 rounded-2xl border transition-all ${
+                        getProjectForSlot(slotId, 'Short Video') 
+                          ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
+                          : 'bg-card-bg/50 border-light-border border-dashed'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          getProjectForSlot(slotId, 'Short Video') 
+                            ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
+                            : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
+                        }`}>
+                          {getProjectForSlot(slotId, 'Short Video') ? (getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
+                        </span>
+                      </div>
+
+                      {getProjectForSlot(slotId, 'Short Video') ? (
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.title}</h4>
+                            <a 
+                              href={getProjectForSlot(slotId, 'Short Video')?.video_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
+                            >
+                              <ExternalLink size={12} className="flex-shrink-0" />
+                              <span className="line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.video_url}</span>
                             </a>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => handleDeleteProject(project.id)}
-                              className="p-1 hover:text-red-500 transition-colors"
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
+                            <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.platform}</strong></span>
+                            <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.views.toLocaleString()}</strong></span>
+                          </div>
+
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Short Video');
+                                if (p) {
+                                  setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
+                                  setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
+                                }
+                              }}
+                              className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
+                            >
+                              Change Link
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Short Video');
+                                if (p) handleToggleVisibility(p, 'Short Video');
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                                getProjectForSlot(slotId, 'Short Video')?.likes !== 0
+                                  ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
+                                  : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
+                              }`}
+                              title={getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
+                            >
+                              {getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Short Video');
+                                if (p) handleDeleteSlot(p.id);
+                              }}
+                              className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
+                              title="Clear Slot"
                             >
                               <Trash2 size={14} />
                             </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-muted-text">
-                          No client stories added yet. Use the form on the left to add one.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Short Videos Section */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Film size={20} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-primary-text">Short Videos (Featured Work)</h2>
-                <p className="text-xs text-secondary-text">Configure the 10 video slots visible on the main page.</p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 10 }, (_, i) => `Short Slot ${i + 1}`).map(slotId => (
-                <div 
-                  key={slotId}
-                  className={`p-5 rounded-2xl border transition-all ${
-                    getProjectForSlot(slotId, 'Short Video') 
-                      ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
-                      : 'bg-card-bg/50 border-light-border border-dashed'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                      getProjectForSlot(slotId, 'Short Video') 
-                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
-                        : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
-                    }`}>
-                      {getProjectForSlot(slotId, 'Short Video') ? (getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
-                    </span>
-                  </div>
-
-                  {getProjectForSlot(slotId, 'Short Video') ? (
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.title}</h4>
-                        <a 
-                          href={getProjectForSlot(slotId, 'Short Video')?.video_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
+                          </div>
+                        </div>
+                      ) : (
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSaveSlot(slotId, 'Short Video');
+                          }} 
+                          className="space-y-3"
                         >
-                          <ExternalLink size={12} className="flex-shrink-0" />
-                          <span className="line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.video_url}</span>
-                        </a>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
-                        <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.platform}</strong></span>
-                        <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.views.toLocaleString()}</strong></span>
-                      </div>
-
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Short Video');
-                            if (p) {
-                              setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
-                              setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
-                            }
-                          }}
-                          className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
-                        >
-                          Change Link
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Short Video');
-                            if (p) handleToggleVisibility(p, 'Short Video');
-                          }}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                            getProjectForSlot(slotId, 'Short Video')?.likes !== 0
-                              ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
-                              : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
-                          }`}
-                          title={getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
-                        >
-                          {getProjectForSlot(slotId, 'Short Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Short Video');
-                            if (p) handleDeleteSlot(p.id);
-                          }}
-                          className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
-                          title="Clear Slot"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                          <div>
+                            <input
+                              type="url"
+                              required
+                              placeholder="Video Link (YouTube, Instagram...)"
+                              value={slotLinks[slotId] || ''}
+                              onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
+                              className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                            />
+                          </div>
+                          {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
+                          <button
+                            type="submit"
+                            disabled={isAddingSlot[slotId]}
+                            className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
+                          >
+                            {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
+                          </button>
+                        </form>
+                      )}
                     </div>
-                  ) : (
-                    <form 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSaveSlot(slotId, 'Short Video');
-                      }} 
-                      className="space-y-3"
-                    >
-                      <div>
-                        <input
-                          type="url"
-                          required
-                          placeholder="Video Link (YouTube, Instagram...)"
-                          value={slotLinks[slotId] || ''}
-                          onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
-                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
-                        />
-                      </div>
-                      {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
-                      <button
-                        type="submit"
-                        disabled={isAddingSlot[slotId]}
-                        className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
-                      </button>
-                    </form>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Long Videos Section */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Video size={20} />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-primary-text">Long Videos (Shorts Showcase)</h2>
-                <p className="text-xs text-secondary-text">Configure the 10 video slots visible in the scroll showcase.</p>
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 10 }, (_, i) => `Long Slot ${i + 1}`).map(slotId => (
-                <div 
-                  key={slotId}
-                  className={`p-5 rounded-2xl border transition-all ${
-                    getProjectForSlot(slotId, 'Long Video') 
-                      ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
-                      : 'bg-card-bg/50 border-light-border border-dashed'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                      getProjectForSlot(slotId, 'Long Video') 
-                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
-                        : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
-                    }`}>
-                      {getProjectForSlot(slotId, 'Long Video') ? (getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
-                    </span>
+              {/* Long Videos Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Video size={20} />
                   </div>
-
-                  {getProjectForSlot(slotId, 'Long Video') ? (
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.title}</h4>
-                        <a 
-                          href={getProjectForSlot(slotId, 'Long Video')?.video_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
-                        >
-                          <ExternalLink size={12} className="flex-shrink-0" />
-                          <span className="line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.video_url}</span>
-                        </a>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
-                        <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.platform}</strong></span>
-                        <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.views.toLocaleString()}</strong></span>
-                      </div>
-
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Long Video');
-                            if (p) {
-                              setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
-                              setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
-                            }
-                          }}
-                          className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
-                        >
-                          Change Link
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Long Video');
-                            if (p) handleToggleVisibility(p, 'Long Video');
-                          }}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                            getProjectForSlot(slotId, 'Long Video')?.likes !== 0
-                              ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
-                              : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
-                          }`}
-                          title={getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
-                        >
-                          {getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const p = getProjectForSlot(slotId, 'Long Video');
-                            if (p) handleDeleteSlot(p.id);
-                          }}
-                          className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
-                          title="Clear Slot"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <form 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSaveSlot(slotId, 'Long Video');
-                      }} 
-                      className="space-y-3"
-                    >
-                      <div>
-                        <input
-                          type="url"
-                          required
-                          placeholder="Video Link (YouTube, Instagram...)"
-                          value={slotLinks[slotId] || ''}
-                          onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
-                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
-                        />
-                      </div>
-                      {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
-                      <button
-                        type="submit"
-                        disabled={isAddingSlot[slotId]}
-                        className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
-                      </button>
-                    </form>
-                  )}
+                  <div>
+                    <h2 className="text-xl font-bold text-primary-text">Long Videos (Shorts Showcase)</h2>
+                    <p className="text-xs text-secondary-text">Configure the 10 video slots visible in the scroll showcase.</p>
+                  </div>
                 </div>
-              ))}
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 10 }, (_, i) => `Long Slot ${i + 1}`).map(slotId => (
+                    <div 
+                      key={slotId}
+                      className={`p-5 rounded-2xl border transition-all ${
+                        getProjectForSlot(slotId, 'Long Video') 
+                          ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
+                          : 'bg-card-bg/50 border-light-border border-dashed'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          getProjectForSlot(slotId, 'Long Video') 
+                            ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
+                            : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
+                        }`}>
+                          {getProjectForSlot(slotId, 'Long Video') ? (getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Active' : 'Hidden') : 'Empty'}
+                        </span>
+                      </div>
+
+                      {getProjectForSlot(slotId, 'Long Video') ? (
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.title}</h4>
+                            <a 
+                              href={getProjectForSlot(slotId, 'Long Video')?.video_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
+                            >
+                              <ExternalLink size={12} className="flex-shrink-0" />
+                              <span className="line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.video_url}</span>
+                            </a>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
+                            <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.platform}</strong></span>
+                            <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.views.toLocaleString()}</strong></span>
+                          </div>
+
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Long Video');
+                                if (p) {
+                                  setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
+                                  setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
+                                }
+                              }}
+                              className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
+                            >
+                              Change Link
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Long Video');
+                                if (p) handleToggleVisibility(p, 'Long Video');
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                                getProjectForSlot(slotId, 'Long Video')?.likes !== 0
+                                  ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5'
+                                  : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 bg-amber-500/5'
+                              }`}
+                              title={getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Hide from Site' : 'Show on Site'}
+                            >
+                              {getProjectForSlot(slotId, 'Long Video')?.likes !== 0 ? 'Visible' : 'Hidden'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = getProjectForSlot(slotId, 'Long Video');
+                                if (p) handleDeleteSlot(p.id);
+                              }}
+                              className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
+                              title="Clear Slot"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSaveSlot(slotId, 'Long Video');
+                          }} 
+                          className="space-y-3"
+                        >
+                          <div>
+                            <input
+                              type="url"
+                              required
+                              placeholder="Video Link (YouTube, Instagram...)"
+                              value={slotLinks[slotId] || ''}
+                              onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
+                              className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                            />
+                          </div>
+                          {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
+                          <button
+                            type="submit"
+                            disabled={isAddingSlot[slotId]}
+                            className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
+                          >
+                            {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm space-y-6">
+                <div>
+                  <h3 className="font-bold text-primary-text text-base mb-1">Profile Information</h3>
+                  <p className="text-xs text-secondary-text">Configure your personal portfolio details.</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Display Name</label>
+                    <input
+                      type="text"
+                      disabled
+                      value="Anuraq Editor"
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg text-primary-text text-sm opacity-60 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Primary Role</label>
+                    <input
+                      type="text"
+                      disabled
+                      value="Professional Video Editor & Content Strategist"
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg text-primary-text text-sm opacity-60 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm space-y-6">
+                <div>
+                  <h3 className="font-bold text-primary-text text-base mb-1">System Preferences</h3>
+                  <p className="text-xs text-secondary-text">Manage website behaviors and configurations.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2 border-b border-light-border">
+                    <div>
+                      <h4 className="text-xs font-semibold text-primary-text">Auto-detect Platform</h4>
+                      <p className="text-[10px] text-secondary-text">Automatically identify platform from video links.</p>
+                    </div>
+                    <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Enabled</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-light-border">
+                    <div>
+                      <h4 className="text-xs font-semibold text-primary-text">Analytics Tracking</h4>
+                      <p className="text-[10px] text-secondary-text">Aggregate views and statistics on dashboard.</p>
+                    </div>
+                    <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <h4 className="text-xs font-semibold text-primary-text">Database Sync</h4>
+                      <p className="text-[10px] text-secondary-text">Direct SQLite database connection status.</p>
+                    </div>
+                    <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Connected</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

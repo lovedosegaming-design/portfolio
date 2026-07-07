@@ -15,6 +15,7 @@ interface Client {
   avatar: string;
   videoUrl?: string;
   thumbnail?: string;
+  videos?: Array<{ id: string; url: string; thumbnail?: string; title: string; views: number }>;
 }
 
 const initialClients: Client[] = [
@@ -100,22 +101,60 @@ export default function ClientProjects() {
     const fetchClients = async () => {
       try {
         const res = await api.get('/projects');
-        const clientProjects = res.data
-          .filter((p: any) => p.category === 'Client Story')
-          .map((p: any) => ({
-            id: p.id,
-            name: p.client_name || p.title,
-            platform: p.platform,
-            views: (p.views || 0).toLocaleString(),
-            subscribers: p.views || 0, // Fallback if no specific subscriber metric
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.client_name || p.title)}&background=random`,
-            videoUrl: p.video_url,
-            thumbnail: p.thumbnail_url
+        const clientStories = res.data.filter((p: any) => p.category === 'Client Story');
+        
+        if (clientStories.length > 0) {
+          const grouped: Record<string, any> = {};
+          
+          clientStories.forEach((p: any) => {
+            const name = p.client_name || p.title;
+            if (!grouped[name]) {
+              grouped[name] = {
+                id: p.id,
+                name,
+                platform: p.platform,
+                viewsSum: 0,
+                subscribersMax: 0,
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                videos: []
+              };
+            }
+            grouped[name].videos.push({
+              id: p.id,
+              url: p.video_url,
+              thumbnail: p.thumbnail_url || `https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop`,
+              title: p.title || 'Client Video',
+              views: p.views || 0
+            });
+            grouped[name].viewsSum += (p.views || 0);
+            grouped[name].subscribersMax = Math.max(grouped[name].subscribersMax, p.views || 0);
+          });
+          
+          const clientProjects = Object.values(grouped).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            platform: c.platform,
+            views: c.viewsSum.toLocaleString(),
+            subscribers: c.subscribersMax,
+            avatar: c.avatar,
+            videoUrl: c.videos[0]?.url,
+            thumbnail: c.videos[0]?.thumbnail,
+            videos: c.videos
           }));
-        setClients(clientProjects.length > 0 ? clientProjects : initialClients);
+          
+          setClients(clientProjects);
+        } else {
+          setClients(initialClients.map(c => ({
+            ...c,
+            videos: c.videoUrl ? [{ id: c.id, url: c.videoUrl, thumbnail: c.thumbnail, title: 'Featured Project', views: 50000 }] : []
+          })));
+        }
       } catch (error) {
         console.error('Failed to fetch clients', error);
-        setClients(initialClients);
+        setClients(initialClients.map(c => ({
+          ...c,
+          videos: c.videoUrl ? [{ id: c.id, url: c.videoUrl, thumbnail: c.thumbnail, title: 'Featured Project', views: 50000 }] : []
+        })));
       }
     };
     fetchClients();
@@ -210,7 +249,13 @@ export default function ClientProjects() {
               transition={{ delay: index * 0.05 }}
               onMouseEnter={() => setHoveredClient(client.id)}
               onMouseLeave={() => setHoveredClient(null)}
-              onClick={() => client.videoUrl && setPlayingVideo(client.videoUrl)}
+              onClick={() => {
+                if (client.videos && client.videos.length > 1) {
+                  setHoveredClient(prev => prev === client.id ? null : client.id);
+                } else if (client.videoUrl) {
+                  setPlayingVideo(client.videoUrl);
+                }
+              }}
               className="group relative rounded-xl bg-white/50 backdrop-blur-sm border border-light-border hover:border-accent hover:shadow-lg transition-all cursor-pointer overflow-hidden"
             >
               <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center relative z-10">
@@ -247,33 +292,70 @@ export default function ClientProjects() {
                 </div>
               </div>
 
-              {/* Video Preview on Hover */}
+              {/* Video Preview on Hover / Click */}
               <AnimatePresence>
-                {hoveredClient === client.id && client.thumbnail && (
+                {hoveredClient === client.id && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     className="bg-soft-bg border-t border-light-border"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="p-4 flex gap-4 items-center">
-                      <div className="relative w-48 aspect-video rounded-lg overflow-hidden bg-black/50 flex-shrink-0">
-                        <img 
-                          src={client.thumbnail} 
-                          alt="Video thumbnail" 
-                          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center">
-                            <Play size={20} className="text-white fill-current ml-1" />
-                          </div>
+                    {client.videos && client.videos.length > 1 ? (
+                      <div className="p-5 space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-secondary-text">Edited Projects ({client.videos.length})</p>
+                        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                          {client.videos.map((vid) => (
+                            <div 
+                              key={vid.id}
+                              onClick={() => setPlayingVideo(vid.url)}
+                              className="flex items-center gap-3 p-2.5 rounded-xl bg-card-bg border border-light-border hover:border-accent transition-all cursor-pointer group/vid"
+                            >
+                              <div className="relative w-20 aspect-video rounded bg-black/50 overflow-hidden flex-shrink-0">
+                                <img 
+                                  src={vid.thumbnail || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop'} 
+                                  alt="Thumbnail" 
+                                  className="w-full h-full object-cover opacity-80 group-hover/vid:opacity-100 transition-opacity"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Play size={10} className="text-white fill-current ml-0.5" />
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-primary-text truncate group-hover/vid:text-accent transition-colors">
+                                  {vid.title || 'Client Video'}
+                                </p>
+                                <p className="text-[10px] text-secondary-text mt-0.5">
+                                  Click to watch video
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="text-sm text-secondary-text">
-                        <p className="text-primary-text font-medium mb-1">Featured Project</p>
-                        <p>Click to watch the full video edited for {client.name}</p>
-                      </div>
-                    </div>
+                    ) : (
+                      client.thumbnail && (
+                        <div className="p-4 flex gap-4 items-center cursor-pointer" onClick={() => client.videoUrl && setPlayingVideo(client.videoUrl)}>
+                          <div className="relative w-48 aspect-video rounded-lg overflow-hidden bg-black/50 flex-shrink-0">
+                            <img 
+                              src={client.thumbnail} 
+                              alt="Video thumbnail" 
+                              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center">
+                                <Play size={20} className="text-white fill-current ml-1" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-sm text-secondary-text">
+                            <p className="text-primary-text font-medium mb-1">Featured Project</p>
+                            <p>Click to watch the full video edited for {client.name}</p>
+                          </div>
+                        </div>
+                      )
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
