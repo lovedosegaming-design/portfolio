@@ -529,10 +529,11 @@ export default function Admin() {
                                 const p = getProjectForSlot(slotId, 'Short Video');
                                 if (p) handleDeleteSlot(p.id);
                               }}
-                              className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
-                              title="Clear Slot"
+                              className="px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors flex items-center gap-1"
+                              title="Delete Video Link"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={12} className="flex-shrink-0" />
+                              <span>Delete</span>
                             </button>
                           </div>
                         </div>
@@ -657,10 +658,11 @@ export default function Admin() {
                                 const p = getProjectForSlot(slotId, 'Long Video');
                                 if (p) handleDeleteSlot(p.id);
                               }}
-                              className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
-                              title="Clear Slot"
+                              className="px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors flex items-center gap-1"
+                              title="Delete Video Link"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={12} className="flex-shrink-0" />
+                              <span>Delete</span>
                             </button>
                           </div>
                         </div>
