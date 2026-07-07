@@ -152,7 +152,7 @@ export default function ClientProjects() {
   };
 
   return (
-    <section className="py-24 bg-main-bg relative">
+    <section id="clients" className="py-24 bg-main-bg relative">
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
