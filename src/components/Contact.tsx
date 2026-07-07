@@ -96,13 +96,12 @@ export default function Contact() {
                 >
                   <option>YouTube Video Editing</option>
                   <option>Shorts / Reels</option>
-                  <option>Full Channel Management</option>
                   <option>Other</option>
                 </select>
               </div>
 
               <AnimatePresence>
-                {projectType === 'YouTube Video Editing' && (
+                {(projectType === 'YouTube Video Editing' || projectType === 'Shorts / Reels') && (
                   <motion.div
                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
                     animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
