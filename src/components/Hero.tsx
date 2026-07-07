@@ -1,8 +1,26 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, Users, Award } from 'lucide-react';
 import ThreeDTilt from './ThreeDTilt';
+import api from '../utils/api';
 
 export default function Hero() {
+  const [availability, setAvailability] = useState('available');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings');
+        if (res.data && res.data.availability_status) {
+          setAvailability(res.data.availability_status);
+        }
+      } catch (error) {
+        console.error('Failed to fetch availability status', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Video/Gradient */}
@@ -29,8 +47,10 @@ export default function Hero() {
           className="space-y-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-light-border backdrop-blur-md shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-sm font-medium text-secondary-text">Available for new projects</span>
+            <span className={`w-2 h-2 rounded-full animate-pulse ${availability === 'available' ? 'bg-accent' : 'bg-red-500'}`} />
+            <span className="text-sm font-medium text-secondary-text">
+              {availability === 'available' ? 'Available for new projects' : 'Unavailable for new projects'}
+            </span>
           </div>
           
           <h1 className="text-5xl lg:text-7xl font-bold leading-tight tracking-tight text-primary-text">

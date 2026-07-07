@@ -46,6 +46,11 @@ db.exec(`
     name TEXT,
     proficiency INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
 `);
 
 // Seed initial data if empty
@@ -77,6 +82,12 @@ if (reviewsCount.count === 0) {
   insertReview.run(uuidv4(), 'Sarah Jenkins', 'https://picsum.photos/seed/sarah/200', 'SarahVlogs', 5, 'Absolutely transformed my channel. The retention rate skyrocketed after hiring him!');
   insertReview.run(uuidv4(), 'Mike Ross', 'https://picsum.photos/seed/mike/200', 'TechInsider', 5, 'Professional, fast, and incredibly creative. Best editor I have worked with.');
   insertReview.run(uuidv4(), 'Jessica Lee', 'https://picsum.photos/seed/jessica/200', 'YogaWithJess', 4, 'Great communication and amazing edits. Highly recommended for lifestyle content.');
+}
+
+const settingsCount = db.prepare('SELECT count(*) as count FROM settings').get() as { count: number };
+if (settingsCount.count === 0) {
+  const insertSetting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
+  insertSetting.run('availability_status', 'available');
 }
 
 async function startServer() {
@@ -129,6 +140,33 @@ async function startServer() {
   app.get('/api/reviews', (req, res) => {
     const reviews = db.prepare('SELECT * FROM reviews').all();
     res.json(reviews);
+  });
+
+  app.get('/api/settings', (req, res) => {
+    try {
+      const settings = db.prepare('SELECT * FROM settings').all();
+      const settingsMap = settings.reduce((acc: any, curr: any) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      }, {});
+      res.json(settingsMap);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+  });
+
+  app.post('/api/settings', (req, res) => {
+    const { key, value } = req.body;
+    try {
+      const stmt = db.prepare(`
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES (?, ?)
+      `);
+      stmt.run(key, value);
+      res.json({ key, value });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to save setting' });
+    }
   });
 
   // Vite middleware for development

@@ -33,10 +33,32 @@ export default function Admin() {
   const [clientStoryPlatform, setClientStoryPlatform] = useState('YouTube');
   const [isAddingClientStory, setIsAddingClientStory] = useState(false);
   const [clientStoryError, setClientStoryError] = useState('');
+  const [availabilityStatus, setAvailabilityStatus] = useState('available');
 
   useEffect(() => {
     fetchProjects();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get('/settings');
+      if (res.data && res.data.availability_status) {
+        setAvailabilityStatus(res.data.availability_status);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings', error);
+    }
+  };
+
+  const handleUpdateAvailability = async (value: string) => {
+    try {
+      setAvailabilityStatus(value);
+      await api.post('/settings', { key: 'availability_status', value });
+    } catch (error) {
+      console.error('Failed to update availability setting', error);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -728,6 +750,17 @@ export default function Admin() {
                       value="Professional Video Editor & Content Strategist"
                       className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg text-primary-text text-sm opacity-60 cursor-not-allowed"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Availability Status</label>
+                    <select
+                      value={availabilityStatus}
+                      onChange={(e) => handleUpdateAvailability(e.target.value)}
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                    >
+                      <option value="available">Available for new projects</option>
+                      <option value="unavailable">Unavailable for new projects</option>
+                    </select>
                   </div>
                 </div>
               </div>
