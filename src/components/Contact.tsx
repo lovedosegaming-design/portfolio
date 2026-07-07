@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Send, MapPin } from 'lucide-react';
 
 export default function Contact() {
   const [projectType, setProjectType] = useState('🎮 Gaming');
+  const [videoFormat, setVideoFormat] = useState('Long Video');
   return (
     <section id="contact" className="py-24 bg-soft-bg relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-soft-bg to-soft-bg -z-10" />
@@ -104,6 +105,28 @@ export default function Contact() {
                   <option>Other</option>
                 </select>
               </div>
+
+              <AnimatePresence>
+                {projectType !== 'Other' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-2 overflow-hidden"
+                  >
+                    <label className="text-sm font-medium text-secondary-text">Video Format</label>
+                    <select
+                      value={videoFormat}
+                      onChange={(e) => setVideoFormat(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-soft-bg border border-light-border focus:border-primary focus:outline-none text-primary-text transition-colors appearance-none"
+                    >
+                      <option>Long Video</option>
+                      <option>Shorts / Reels</option>
+                    </select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-secondary-text">Message</label>
