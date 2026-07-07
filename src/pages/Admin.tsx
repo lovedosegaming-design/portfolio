@@ -368,15 +368,6 @@ export default function Admin() {
                     >
                       <div>
                         <input
-                          type="text"
-                          placeholder="Video Title (Optional)"
-                          value={slotTitles[slotId] || ''}
-                          onChange={(e) => setSlotTitles(prev => ({ ...prev, [slotId]: e.target.value }))}
-                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
-                        />
-                      </div>
-                      <div>
-                        <input
                           type="url"
                           required
                           placeholder="Video Link (YouTube, Instagram...)"
@@ -503,15 +494,6 @@ export default function Admin() {
                       }} 
                       className="space-y-3"
                     >
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Video Title (Optional)"
-                          value={slotTitles[slotId] || ''}
-                          onChange={(e) => setSlotTitles(prev => ({ ...prev, [slotId]: e.target.value }))}
-                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
-                        />
-                      </div>
                       <div>
                         <input
                           type="url"
