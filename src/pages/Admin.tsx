@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Video, Settings, Trash2, LogOut } from 'lucide-react';
+import { Video, Settings, Trash2, LogOut, Plus, ExternalLink, Film, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -10,7 +10,9 @@ interface Project {
   title: string;
   client_name: string;
   platform: string;
+  video_url?: string;
   views: number;
+  category?: string;
 }
 
 export default function Admin() {
@@ -18,11 +20,18 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState<Project[]>([]);
 
+  // Slot States
+  const [slotLinks, setSlotLinks] = useState<Record<string, string>>({});
+  const [slotTitles, setSlotTitles] = useState<Record<string, string>>({});
+  const [isAddingSlot, setIsAddingSlot] = useState<Record<string, boolean>>({});
+  const [slotErrors, setSlotErrors] = useState<Record<string, string>>({});
 
-  const [isQuickAdding, setIsQuickAdding] = useState(false);
-  const [quickLink, setQuickLink] = useState('');
-  const [quickCategory, setQuickCategory] = useState('Short Video');
-  const [quickError, setQuickError] = useState('');
+  // Client Story Form State
+  const [clientStoryLink, setClientStoryLink] = useState('');
+  const [clientStoryName, setClientStoryName] = useState('');
+  const [clientStoryPlatform, setClientStoryPlatform] = useState('YouTube');
+  const [isAddingClientStory, setIsAddingClientStory] = useState(false);
+  const [clientStoryError, setClientStoryError] = useState('');
 
   useEffect(() => {
     fetchProjects();
@@ -37,65 +46,133 @@ export default function Admin() {
     }
   };
 
+  const getProjectForSlot = (slotId: string, category: string) => {
+    return projects.find(p => p.category === category && p.client_name === slotId);
+  };
 
+  const handleSaveSlot = async (slotId: string, category: string) => {
+    const link = slotLinks[slotId];
+    const userTitle = slotTitles[slotId] || '';
+    if (!link) {
+      setSlotErrors(prev => ({ ...prev, [slotId]: 'Please provide a link' }));
+      return;
+    }
 
-  const handleQuickAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setQuickError('');
-    setIsQuickAdding(true);
+    setIsAddingSlot(prev => ({ ...prev, [slotId]: true }));
+    setSlotErrors(prev => ({ ...prev, [slotId]: '' }));
 
-    setTimeout(async () => {
-      try {
-        let platform = '';
-        let title = 'New Content';
-        const url = quickLink.toLowerCase();
+    try {
+      let platform = 'YouTube';
+      let detectedTitle = userTitle || 'New Video';
+      const url = link.toLowerCase();
 
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-          platform = 'YouTube';
-          title = 'New YouTube Video';
-        } else if (url.includes('instagram.com')) {
-          platform = 'Instagram';
-          title = 'New Reel';
-        } else if (url.includes('tiktok.com')) {
-          platform = 'TikTok';
-          title = 'New TikTok';
-        } else if (url.includes('twitch.tv')) {
-          platform = 'Twitch';
-          title = 'Twitch Stream';
-        } else {
-          try {
-            const domain = new URL(quickLink).hostname;
-            platform = domain.replace('www.', '').split('.')[0];
-            platform = platform.charAt(0).toUpperCase() + platform.slice(1);
-            title = `New ${platform} Content`;
-          } catch (e) {
-            throw new Error('Invalid URL. Please provide a valid link.');
-          }
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        platform = 'YouTube';
+        if (!userTitle) detectedTitle = 'New YouTube Video';
+      } else if (url.includes('instagram.com')) {
+        platform = 'Instagram';
+        if (!userTitle) detectedTitle = 'New Reel';
+      } else if (url.includes('tiktok.com')) {
+        platform = 'TikTok';
+        if (!userTitle) detectedTitle = 'New TikTok';
+      } else if (url.includes('twitch.tv')) {
+        platform = 'Twitch';
+        if (!userTitle) detectedTitle = 'Twitch Stream';
+      } else {
+        try {
+          const domain = new URL(link).hostname;
+          platform = domain.replace('www.', '').split('.')[0];
+          platform = platform.charAt(0).toUpperCase() + platform.slice(1);
+          if (!userTitle) detectedTitle = `New ${platform} Content`;
+        } catch (e) {
+          throw new Error('Invalid URL. Please provide a valid link.');
         }
-
-        const newEntry = {
-          title,
-          client_name: quickCategory === 'Client Story' ? 'New Client' : 'Portfolio',
-          platform,
-          video_url: quickLink,
-          thumbnail_url: `https://source.unsplash.com/random/800x600?sig=${Date.now()}`,
-          views: Math.floor(Math.random() * 500000) + 10000,
-          category: quickCategory
-        };
-
-        await api.post('/projects', newEntry);
-        fetchProjects();
-        setQuickLink('');
-      } catch (err: any) {
-        setQuickError(err.message);
-      } finally {
-        setIsQuickAdding(false);
       }
-    }, 1000);
+
+      const existingProject = projects.find(p => p.category === category && p.client_name === slotId);
+      if (existingProject) {
+        await api.delete(`/projects/${existingProject.id}`);
+      }
+
+      const newEntry = {
+        title: detectedTitle,
+        client_name: slotId,
+        platform,
+        video_url: link,
+        thumbnail_url: `https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000&auto=format&fit=crop`,
+        views: Math.floor(Math.random() * 500000) + 10000,
+        category: category
+      };
+
+      await api.post('/projects', newEntry);
+      await fetchProjects();
+      
+      setSlotLinks(prev => ({ ...prev, [slotId]: '' }));
+      setSlotTitles(prev => ({ ...prev, [slotId]: '' }));
+    } catch (err: any) {
+      setSlotErrors(prev => ({ ...prev, [slotId]: err.message }));
+    } finally {
+      setIsAddingSlot(prev => ({ ...prev, [slotId]: false }));
+    }
+  };
+
+  const handleDeleteSlot = async (projectId: string) => {
+    if (window.confirm('Are you sure you want to clear this slot?')) {
+      try {
+        await api.delete(`/projects/${projectId}`);
+        fetchProjects();
+      } catch (error) {
+        console.error('Failed to clear slot', error);
+      }
+    }
+  };
+
+  const handleSaveClientStory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientStoryLink || !clientStoryName) {
+      setClientStoryError('Please provide both Client Name and Video Link');
+      return;
+    }
+
+    setIsAddingClientStory(true);
+    setClientStoryError('');
+
+    try {
+      let platform = clientStoryPlatform;
+      const url = clientStoryLink.toLowerCase();
+
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        platform = 'YouTube';
+      } else if (url.includes('instagram.com')) {
+        platform = 'Instagram';
+      } else if (url.includes('tiktok.com')) {
+        platform = 'TikTok';
+      }
+
+      const newEntry = {
+        title: `${clientStoryName} Success Story`,
+        client_name: clientStoryName,
+        platform,
+        video_url: clientStoryLink,
+        thumbnail_url: `https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop`,
+        views: Math.floor(Math.random() * 500000) + 10000,
+        category: 'Client Story'
+      };
+
+      await api.post('/projects', newEntry);
+      fetchProjects();
+      
+      setClientStoryLink('');
+      setClientStoryName('');
+    } catch (err: any) {
+      setClientStoryError(err.message);
+    } finally {
+      setIsAddingClientStory(false);
+    }
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
+    if (window.confirm('Are you sure you want to delete this client story?')) {
       try {
         await api.delete(`/projects/${id}`);
         fetchProjects();
@@ -160,88 +237,366 @@ export default function Admin() {
 
         </header>
 
-        {/* Quick Add Link Form */}
-        <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-primary-text">
-            <Video size={20} className="text-primary" />
-            Quick Add via Link
-          </h3>
-          <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-4 items-start md:items-end">
-            <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-secondary-text mb-2">Video Link</label>
-              <input
-                type="url"
-                required
-                value={quickLink}
-                onChange={(e) => setQuickLink(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-4 py-2 bg-card-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-              />
+        <div className="space-y-12">
+          {/* Short Videos Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Film size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-primary-text">Short Videos (Featured Work)</h2>
+                <p className="text-xs text-secondary-text">Configure the 6 video slots visible on the main page.</p>
+              </div>
             </div>
-            <div className="w-full md:w-48">
-              <label className="block text-sm font-medium text-secondary-text mb-2">Category</label>
-              <select
-                value={quickCategory}
-                onChange={(e) => setQuickCategory(e.target.value)}
-                className="w-full px-4 py-2 bg-card-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-              >
-                <option value="Short Video">Short Video</option>
-                <option value="Long Video">Long Video</option>
-                <option value="Client Story">Client Story</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={isQuickAdding}
-              className="px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 h-10 shadow-md shadow-primary/20"
-            >
-              {isQuickAdding ? 'Adding...' : 'Add Link'}
-            </button>
-          </form>
-          {quickError && <p className="mt-2 text-red-400 text-xs">{quickError}</p>}
-        </div>
 
-
-
-        {/* Projects List */}
-        <div className="bg-card-bg border border-light-border rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full text-left text-sm text-secondary-text">
-            <thead className="bg-soft-bg text-secondary-text uppercase font-medium">
-              <tr>
-                <th className="px-6 py-4">Title</th>
-                <th className="px-6 py-4">Client</th>
-                <th className="px-6 py-4">Platform</th>
-                <th className="px-6 py-4">Views</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-light-border">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-soft-bg transition-colors">
-                  <td className="px-6 py-4 font-medium text-primary-text">{project.title}</td>
-                  <td className="px-6 py-4">{project.client_name}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs border ${
-                      project.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
-                      project.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
-                      'border-blue-500/20 text-blue-400 bg-blue-500/10'
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }, (_, i) => `Short Slot ${i + 1}`).map(slotId => (
+                <div 
+                  key={slotId}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    getProjectForSlot(slotId, 'Short Video') 
+                      ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
+                      : 'bg-card-bg/50 border-light-border border-dashed'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      getProjectForSlot(slotId, 'Short Video') 
+                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
+                        : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
                     }`}>
-                      {project.platform}
+                      {getProjectForSlot(slotId, 'Short Video') ? 'Active' : 'Empty'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-primary-text">{project.views.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="p-2 hover:text-red-500 transition-colors"
+                  </div>
+
+                  {getProjectForSlot(slotId, 'Short Video') ? (
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.title}</h4>
+                        <a 
+                          href={getProjectForSlot(slotId, 'Short Video')?.video_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
+                        >
+                          <ExternalLink size={12} className="flex-shrink-0" />
+                          <span className="line-clamp-1">{getProjectForSlot(slotId, 'Short Video')?.video_url}</span>
+                        </a>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
+                        <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.platform}</strong></span>
+                        <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Short Video')?.views.toLocaleString()}</strong></span>
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Short Video');
+                            if (p) {
+                              setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
+                              setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
+                            }
+                          }}
+                          className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
+                        >
+                          Change Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Short Video');
+                            if (p) handleDeleteSlot(p.id);
+                          }}
+                          className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
+                          title="Clear Slot"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSaveSlot(slotId, 'Short Video');
+                      }} 
+                      className="space-y-3"
                     >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Video Title (Optional)"
+                          value={slotTitles[slotId] || ''}
+                          onChange={(e) => setSlotTitles(prev => ({ ...prev, [slotId]: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="url"
+                          required
+                          placeholder="Video Link (YouTube, Instagram...)"
+                          value={slotLinks[slotId] || ''}
+                          onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                        />
+                      </div>
+                      {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
+                      <button
+                        type="submit"
+                        disabled={isAddingSlot[slotId]}
+                        className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
+                      >
+                        {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
+                      </button>
+                    </form>
+                  )}
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          {/* Long Videos Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Video size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-primary-text">Long Videos (Shorts Showcase)</h2>
+                <p className="text-xs text-secondary-text">Configure the 5 video slots visible in the scroll showcase.</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 5 }, (_, i) => `Long Slot ${i + 1}`).map(slotId => (
+                <div 
+                  key={slotId}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    getProjectForSlot(slotId, 'Long Video') 
+                      ? 'bg-card-bg border-primary/20 shadow-md shadow-primary/5' 
+                      : 'bg-card-bg/50 border-light-border border-dashed'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">{slotId}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      getProjectForSlot(slotId, 'Long Video') 
+                        ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' 
+                        : 'border-gray-500/20 text-gray-400 bg-gray-500/10'
+                    }`}>
+                      {getProjectForSlot(slotId, 'Long Video') ? 'Active' : 'Empty'}
+                    </span>
+                  </div>
+
+                  {getProjectForSlot(slotId, 'Long Video') ? (
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-bold text-primary-text text-sm line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.title}</h4>
+                        <a 
+                          href={getProjectForSlot(slotId, 'Long Video')?.video_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 break-all"
+                        >
+                          <ExternalLink size={12} className="flex-shrink-0" />
+                          <span className="line-clamp-1">{getProjectForSlot(slotId, 'Long Video')?.video_url}</span>
+                        </a>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-secondary-text pt-2 border-t border-light-border">
+                        <span>Platform: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.platform}</strong></span>
+                        <span>Views: <strong className="text-primary-text">{getProjectForSlot(slotId, 'Long Video')?.views.toLocaleString()}</strong></span>
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Long Video');
+                            if (p) {
+                              setSlotLinks(prev => ({ ...prev, [slotId]: p.video_url || '' }));
+                              setSlotTitles(prev => ({ ...prev, [slotId]: p.title }));
+                            }
+                          }}
+                          className="flex-1 py-1.5 rounded-lg border border-light-border hover:bg-soft-bg text-xs font-medium text-secondary-text hover:text-primary-text transition-colors"
+                        >
+                          Change Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = getProjectForSlot(slotId, 'Long Video');
+                            if (p) handleDeleteSlot(p.id);
+                          }}
+                          className="p-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-red-400 transition-colors"
+                          title="Clear Slot"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSaveSlot(slotId, 'Long Video');
+                      }} 
+                      className="space-y-3"
+                    >
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Video Title (Optional)"
+                          value={slotTitles[slotId] || ''}
+                          onChange={(e) => setSlotTitles(prev => ({ ...prev, [slotId]: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="url"
+                          required
+                          placeholder="Video Link (YouTube, Instagram...)"
+                          value={slotLinks[slotId] || ''}
+                          onChange={(e) => setSlotLinks(prev => ({ ...prev, [slotId]: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-xs transition-colors placeholder:text-muted-text"
+                        />
+                      </div>
+                      {slotErrors[slotId] && <p className="text-[10px] text-red-400">{slotErrors[slotId]}</p>}
+                      <button
+                        type="submit"
+                        disabled={isAddingSlot[slotId]}
+                        className="w-full py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-xs transition-colors disabled:opacity-50 shadow-sm"
+                      >
+                        {isAddingSlot[slotId] ? 'Saving...' : 'Save to Slot'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Client Stories Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-2 border-b border-light-border">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Settings size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-primary-text">Client Success Stories</h2>
+                <p className="text-xs text-secondary-text">Add and manage video success stories for creators and brands.</p>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6 items-start">
+              {/* Form */}
+              <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
+                <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
+                <form onSubmit={handleSaveClientStory} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Client Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Gaming Nexus"
+                      value={clientStoryName}
+                      onChange={(e) => setClientStoryName(e.target.value)}
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Platform</label>
+                    <select
+                      value={clientStoryPlatform}
+                      onChange={(e) => setClientStoryPlatform(e.target.value)}
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                    >
+                      <option value="YouTube">YouTube</option>
+                      <option value="Instagram">Instagram</option>
+                      <option value="TikTok">TikTok</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://..."
+                      value={clientStoryLink}
+                      onChange={(e) => setClientStoryLink(e.target.value)}
+                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
+                    />
+                  </div>
+                  {clientStoryError && <p className="text-xs text-red-400">{clientStoryError}</p>}
+                  <button
+                    type="submit"
+                    disabled={isAddingClientStory}
+                    className="w-full py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors disabled:opacity-50 shadow-md shadow-primary/10"
+                  >
+                    {isAddingClientStory ? 'Adding...' : 'Add Client Story'}
+                  </button>
+                </form>
+              </div>
+
+              {/* List */}
+              <div className="lg:col-span-2 bg-card-bg border border-light-border rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-secondary-text">
+                  <thead className="bg-soft-bg text-secondary-text uppercase font-semibold text-xs">
+                    <tr>
+                      <th className="px-6 py-4">Client</th>
+                      <th className="px-6 py-4">Platform</th>
+                      <th className="px-6 py-4">Video URL</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-light-border text-xs">
+                    {projects.filter(p => p.category === 'Client Story').length > 0 ? (
+                      projects.filter(p => p.category === 'Client Story').map((project) => (
+                        <tr key={project.id} className="hover:bg-soft-bg transition-colors">
+                          <td className="px-6 py-4 font-bold text-primary-text">{project.client_name}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${
+                              project.platform === 'YouTube' ? 'border-red-500/20 text-red-400 bg-red-500/10' :
+                              project.platform === 'Instagram' ? 'border-pink-500/20 text-pink-400 bg-pink-500/10' :
+                              'border-blue-500/20 text-blue-400 bg-blue-500/10'
+                            }`}>
+                              {project.platform}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 truncate max-w-[200px]" title={project.video_url}>
+                            <a href={project.video_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                              <ExternalLink size={10} />
+                              {project.video_url}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button 
+                              onClick={() => handleDeleteProject(project.id)}
+                              className="p-1 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-muted-text">
+                          No client stories added yet. Use the form on the left to add one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

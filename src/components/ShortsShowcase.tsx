@@ -123,6 +123,7 @@ export default function ShortsShowcase() {
         const res = await api.get('/projects');
         const longVideos = res.data
           .filter((p: any) => p.category === 'Long Video')
+          .sort((a: any, b: any) => (a.client_name || '').localeCompare(b.client_name || ''))
           .map((p: any) => ({
             id: p.id,
             title: p.title,
