@@ -154,8 +154,8 @@ export default function Admin() {
 
   const handleSaveClientStory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientStoryLink || !clientStoryName) {
-      setClientStoryError('Please provide both Client Name and Video Link');
+    if (!clientStoryLink) {
+      setClientStoryError('Please provide a video link');
       return;
     }
 
@@ -163,20 +163,36 @@ export default function Admin() {
     setClientStoryError('');
 
     try {
-      let platform = clientStoryPlatform;
+      let platform = 'YouTube';
+      let clientName = 'Creator';
       const url = clientStoryLink.toLowerCase();
 
       if (url.includes('youtube.com') || url.includes('youtu.be')) {
         platform = 'YouTube';
+        clientName = 'YouTube Creator';
       } else if (url.includes('instagram.com')) {
         platform = 'Instagram';
+        clientName = 'Instagram Creator';
       } else if (url.includes('tiktok.com')) {
         platform = 'TikTok';
+        clientName = 'TikTok Creator';
+      } else if (url.includes('twitch.tv')) {
+        platform = 'Twitch';
+        clientName = 'Twitch Creator';
+      } else {
+        try {
+          const domain = new URL(clientStoryLink).hostname;
+          platform = domain.replace('www.', '').split('.')[0];
+          platform = platform.charAt(0).toUpperCase() + platform.slice(1);
+          clientName = `${platform} Creator`;
+        } catch (e) {
+          throw new Error('Invalid URL. Please provide a valid link.');
+        }
       }
 
       const newEntry = {
-        title: `${clientStoryName} Success Story`,
-        client_name: clientStoryName,
+        title: `${clientName} Success Story`,
+        client_name: clientName,
         platform,
         video_url: clientStoryLink,
         thumbnail_url: `https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop`,
@@ -188,7 +204,6 @@ export default function Admin() {
       fetchProjects();
       
       setClientStoryLink('');
-      setClientStoryName('');
     } catch (err: any) {
       setClientStoryError(err.message);
     } finally {
@@ -536,29 +551,6 @@ export default function Admin() {
               <div className="p-6 rounded-2xl bg-card-bg border border-light-border shadow-sm">
                 <h3 className="text-sm font-bold text-primary-text mb-4">Add Client Success Story</h3>
                 <form onSubmit={handleSaveClientStory} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary-text mb-1">Client Name</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Gaming Nexus"
-                      value={clientStoryName}
-                      onChange={(e) => setClientStoryName(e.target.value)}
-                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary-text mb-1">Platform</label>
-                    <select
-                      value={clientStoryPlatform}
-                      onChange={(e) => setClientStoryPlatform(e.target.value)}
-                      className="w-full px-3 py-2 bg-soft-bg border border-light-border rounded-lg focus:border-primary focus:outline-none text-primary-text text-sm transition-colors"
-                    >
-                      <option value="YouTube">YouTube</option>
-                      <option value="Instagram">Instagram</option>
-                      <option value="TikTok">TikTok</option>
-                    </select>
-                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-secondary-text mb-1">Video Link</label>
                     <input
