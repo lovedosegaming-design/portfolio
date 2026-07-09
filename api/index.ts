@@ -26,9 +26,8 @@ async function dbQuery(sql: string, params: any[] = []): Promise<any[]> {
     /INSERT OR REPLACE INTO (\w+) \(([^)]+)\) VALUES \(([^)]+)\)/gi,
     (_, table, cols, vals) => {
       const colArr = cols.split(',').map((c: string) => c.trim());
-      const valArr = vals.split(',').map((v: string) => v.trim());
       const firstCol = colArr[0];
-      const updates = colArr.slice(1).map((c: string, idx: number) => `${c} = ${valArr[idx + 1]}`).join(', ');
+      const updates = colArr.slice(1).map((c: string) => `${c} = EXCLUDED.${c}`).join(', ');
       return `INSERT INTO ${table} (${cols}) VALUES (${vals}) ON CONFLICT (${firstCol}) DO UPDATE SET ${updates}`;
     }
   );
