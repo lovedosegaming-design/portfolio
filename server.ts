@@ -4,9 +4,18 @@ import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import 'dotenv/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database('lumina.db');
+
+// Resolve database path from env (for Docker volume support) or default to local file
+const DB_PATH = process.env.DATABASE_PATH || 'lumina.db';
+const DB_DIR = path.dirname(path.resolve(DB_PATH));
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
+const db = new Database(DB_PATH);
 
 // Initialize Database
 db.exec(`

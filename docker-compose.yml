@@ -1,0 +1,19 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: lumina-portfolio
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=data/lumina.db
+    volumes:
+      # Mount local ./data folder → /usr/src/app/data inside container
+      # This persists the SQLite database across container restarts
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
