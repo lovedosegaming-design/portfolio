@@ -105,6 +105,18 @@ async function startServer() {
 
   app.use(express.json());
 
+  // CORS Middleware to allow requests from Vercel frontend
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+
   // API Routes
   app.get('/api/projects', (req, res) => {
     const projects = db.prepare('SELECT * FROM projects ORDER BY created_at DESC').all();
